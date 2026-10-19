@@ -214,9 +214,16 @@
       animation: blink .8s steps(2, start) infinite;
     }
 
-    .gift-button { margin-top: 1.8rem; }
-    .gift-button[hidden] { display: none; }
-    .gift-button:disabled { cursor: default; opacity: .8; }
+    .closing-message {
+      margin: 1.8rem 0 0;
+      color: var(--rose-dark);
+      font-size: clamp(.95rem, 3.5vw, 1.1rem);
+      font-weight: 700;
+      text-shadow: 0 0 16px rgba(214, 109, 141, .2);
+      animation: letter-appear .7s ease both;
+    }
+
+    .closing-message[hidden] { display: none; }
 
     .hint {
       position: absolute;
@@ -247,9 +254,7 @@
       color: var(--heart-color, #e985a2);
       font-size: var(--heart-size, 1.2rem);
       opacity: 0;
-      filter: drop-shadow(0 0 8px rgba(226, 111, 146, .28));
       animation: float-up var(--duration, 8s) linear forwards;
-      will-change: transform, opacity;
     }
 
     .spark {
@@ -261,7 +266,6 @@
       box-shadow: 0 0 12px 3px currentColor;
       color: var(--spark-color, #ffd5df);
       animation: sparkle .9s ease-out forwards;
-      will-change: transform, opacity;
     }
 
     .heart.burst-heart {
@@ -318,6 +322,17 @@
       .hint { bottom: .75rem; font-size: .68rem; }
     }
 
+    @media (max-width: 600px), (pointer: coarse) {
+      .card {
+        background: rgba(255, 255, 255, .92);
+        box-shadow: 0 12px 36px rgba(137, 77, 96, .09);
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+      }
+
+      .heart { text-shadow: 0 1px 5px rgba(226, 111, 146, .25); }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         scroll-behavior: auto !important;
@@ -349,9 +364,7 @@
       <h1 id="title">20/10 <span>nhé!</span></h1>
       <div class="divider" aria-hidden="true"></div>
       <p class="message" id="message" aria-live="polite"></p>
-      <button class="gift-button" id="giftButton" type="button" hidden>
-        <span aria-hidden="true">♡</span> Gửi yêu thương
-      </button>
+      <p class="closing-message" id="closingMessage" hidden>20/10 vui vẻ nhé nàng đẹp ♡</p>
     </section>
 
     <p class="hint">Chạm vào màn hình để thắp lên những trái tim nhỏ</p>
@@ -375,12 +388,14 @@
     const floatingLayer = document.getElementById("floatingLayer");
     const burstLayer = document.getElementById("burstLayer");
     const message = document.getElementById("message");
-    const giftButton = document.getElementById("giftButton");
+    const closingMessage = document.getElementById("closingMessage");
     const musicButton = document.getElementById("musicButton");
     const musicLabel = document.getElementById("musicLabel");
     const musicStatus = document.getElementById("musicStatus");
     const currentAudio = document.getElementById("backgroundMusic");
-    const maxFloatingHearts = 70;
+    const isTouchDevice = window.matchMedia("(max-width: 600px), (pointer: coarse)").matches;
+    const maxFloatingHearts = isTouchDevice ? 28 : 70;
+    const heartSpawnInterval = isTouchDevice ? 320 : 180;
     let playPending = false;
 
     function addFloatingHeart() {
@@ -443,7 +458,7 @@
       function typeNext() {
         if (index >= characters.length) {
           message.classList.remove("is-typing");
-          giftButton.hidden = false;
+          closingMessage.hidden = false;
           return;
         }
 
@@ -458,15 +473,9 @@
     }
 
     document.addEventListener("pointerdown", (event) => {
+      if (currentAudio.paused) startMusic();
       if (event.target.closest("button, input")) return;
       burstAt(event.clientX, event.clientY, 8);
-    });
-
-    giftButton.addEventListener("click", (event) => {
-      const button = event.currentTarget;
-      button.textContent = "Chờ chút nhé...";
-      button.disabled = true;
-      button.setAttribute("aria-live", "polite");
     });
 
     async function startMusic() {
@@ -510,9 +519,12 @@
       musicStatus.textContent = "Không tải được nhạc. Kiểm tra tệp cho chut thoi.mp3 và cho chut thoi.m4a có nằm cùng thư mục với trang web không.";
     });
 
-    window.setInterval(addFloatingHeart, 180);
+    window.setInterval(() => {
+      if (!document.hidden) addFloatingHeart();
+    }, heartSpawnInterval);
     typeGreeting(greeting);
     startMusic();
   </script>
 </body>
 </html>
+
